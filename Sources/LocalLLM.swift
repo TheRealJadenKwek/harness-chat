@@ -49,10 +49,12 @@ final class LocalLLM: ObservableObject {
 
     func container(for repo: String) async throws -> ModelContainer {
         if let c = containers[repo] { return c }
+        // HF transformers-v5 class name; map it to the generic fast tokenizer
+        replacementTokenizers["TokenizersBackend"] = "PreTrainedTokenizer"
         loading.insert(repo)
         defer { loading.remove(repo); progress[repo] = nil }
         let c = try await LLMModelFactory.shared.loadContainer(
-            configuration: ModelConfiguration(id: repo, overrideTokenizer: "PreTrainedTokenizer")
+            configuration: ModelConfiguration(id: repo)
         ) { [weak self] p in
             Task { @MainActor in self?.progress[repo] = p.fractionCompleted }
         }

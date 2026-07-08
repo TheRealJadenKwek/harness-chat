@@ -4,6 +4,7 @@ struct Msg: Codable, Identifiable, Hashable {
     var id = UUID()
     var role: String        // "user" | "assistant"
     var content: String
+    var images: [String]? = nil   // data URLs (vision input)
 }
 
 struct Chat: Codable, Identifiable, Hashable {

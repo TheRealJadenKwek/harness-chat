@@ -36,7 +36,14 @@ enum OpenRouter {
                     let body: [String: Any] = [
                         "model": model,
                         "stream": true,
-                        "messages": messages.map { ["role": $0.role, "content": $0.content] },
+                        "messages": messages.map { m -> [String: Any] in
+                            if let imgs = m.images, !imgs.isEmpty {
+                                var parts: [[String: Any]] = [["type": "text", "text": m.content]]
+                                parts += imgs.map { ["type": "image_url", "image_url": ["url": $0]] }
+                                return ["role": m.role, "content": parts]
+                            }
+                            return ["role": m.role, "content": m.content]
+                        },
                     ]
                     req.httpBody = try JSONSerialization.data(withJSONObject: body)
                     let (bytes, resp) = try await URLSession.shared.bytes(for: req)

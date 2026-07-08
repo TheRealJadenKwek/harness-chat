@@ -23,3 +23,5 @@ targets:
       path: Info.plist
       properties:
         UILaunchScreen: {}
+        NSCameraUsageDescription: Take a photo to send to the model.
+        NSPhotoLibraryUsageDescription: Attach photos to your messages.

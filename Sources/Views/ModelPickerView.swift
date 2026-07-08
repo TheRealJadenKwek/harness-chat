@@ -17,10 +17,37 @@ struct ModelPickerView: View {
 
     @StateObject private var local = LocalLLM.shared
 
+    private static let curated: [(id: String, desc: String)] = [
+        ("minimax/minimax-m3", "default 🖼"),
+        ("deepseek/deepseek-v4-pro", "smart"),
+        ("deepseek/deepseek-v4-flash", "cheapest + fastest"),
+        ("nvidia/nemotron-3-ultra-550b-a55b:free", "free!"),
+    ]
+
     var body: some View {
         NavigationStack {
             List {
                 if query.isEmpty {
+                    Section("Defaults") {
+                        ForEach(Self.curated, id: \.id) { c in
+                            if let m = store.models.first(where: { $0.id == c.id }) ?? fallback(c.id) {
+                                Button { selected = m.id; dismiss() } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Text(m.name).foregroundStyle(.primary).lineLimit(1)
+                                                if m.vision { Text("🖼").font(.caption2) }
+                                            }
+                                            Text(c.desc + " · " + priceLabel(m))
+                                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                        }
+                                        Spacer()
+                                        if selected == m.id { Image(systemName: "checkmark").foregroundStyle(.secondary) }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Section("On-device (free, offline)") {
                         ForEach(LocalModels.specs) { spec in
                             HStack {
@@ -94,5 +121,13 @@ struct ModelPickerView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .task { local.refresh(); if store.models.isEmpty { await store.loadModels() } }
         }
+    }
+
+    private func fallback(_ id: String) -> ORModel? {
+        ORModel(id: id, name: shortModel(id), context: 0, promptPrice: 0, completionPrice: 0, vision: false, reasoning: true)
+    }
+    private func priceLabel(_ m: ORModel) -> String {
+        if m.promptPrice == 0 && m.completionPrice == 0 { return "free" }
+        return String(format: "$%.2f/$%.2f per M", m.promptPrice * 1e6, m.completionPrice * 1e6)
     }
 }

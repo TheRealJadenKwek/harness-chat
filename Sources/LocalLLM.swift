@@ -54,7 +54,9 @@ final class LocalLLM: ObservableObject {
         loading.insert(repo)
         defer { loading.remove(repo); progress[repo] = nil }
         let c = try await LLMModelFactory.shared.loadContainer(
-            configuration: ModelConfiguration(id: repo)
+            // the repo's tokenizer_config only declares </s>, but the model's real
+            // stop set (generation_config eos_token_id) also includes <|im_end|>
+            configuration: ModelConfiguration(id: repo, extraEOSTokens: ["<|im_end|>"])
         ) { [weak self] p in
             Task { @MainActor in self?.progress[repo] = p.fractionCompleted }
         }
